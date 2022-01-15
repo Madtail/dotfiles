@@ -59,7 +59,18 @@
 (setq scroll-step 3)
 
 ;; set startup directory
-(setq default-directory "~/") 
+(setq default-directory "~/")
+
+;; set font
+(add-to-list 'default-frame-alist
+             '(font . "Liberation Mono"))
+
+;; Set default font
+(set-face-attribute 'default nil
+                    :family "Liberation Mono"
+                    :height 110
+                    :weight 'normal
+                    :width 'normal)
 
 ;;; END of Code ;; ------------------------------------------------------------------------------------------------------------------
 
