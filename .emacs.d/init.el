@@ -200,4 +200,4 @@
  (require 'yaml-mode)
 (add-to-list 'auto-mode-alist '("\\.yml\\'" . yaml-mode))
 
-(provide 'init.el);;; .emacs ends here
+(provide 'init);;; init.el ends here
