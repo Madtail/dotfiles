@@ -44,6 +44,8 @@
               ("%b - Dir:  " default-directory)))))))
 ; Shows parenthesis
 (show-paren-mode 1)
+;; Automatic pairing
+(electric-pair-mode 1)
 ; Shows column number
 (column-number-mode 1)
 
@@ -98,7 +100,7 @@
 ; activate all the packages
 (package-initialize)
 
-; fetch the list of packages available 
+; fetch the list of packages available
 (unless package-archive-contents
   (package-refresh-contents))
 
@@ -109,6 +111,9 @@
 
 
 ;; -----------------------------------------------------
+
+;; Automatic pairing
+(electric-pair-mode 1)
 
 ; csharp
 (defun my-csharp-mode-hook ()
