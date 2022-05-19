@@ -112,9 +112,6 @@
 
 ;; -----------------------------------------------------
 
-;; Automatic pairing
-(electric-pair-mode 1)
-
 ; csharp
 (defun my-csharp-mode-hook ()
   ;; enable the stuff you want for C# here
