@@ -28,10 +28,9 @@
 ;; line numbers
 (global-linum-mode 1) ; always show line numbers
 
-
-
-;; Indent mode
-(setq c-default-style "linux")
+; 4-space tabs
+  (setq tab-width 4
+        indent-tabs-mode nil)
 
 ; Get rid of the startup message
 (setq inhibit-startup-message t)
@@ -50,6 +49,11 @@
 (column-number-mode 1)
 
 
+; Stop Emacs from losing undo information by
+; setting very high limits for undo buffers
+(setq undo-limit 20000000)
+(setq undo-strong-limit 40000000)
+
 ;; Linter
 (add-hook 'after-init-hook #'global-flycheck-mode)
 
@@ -61,18 +65,20 @@
 (setq scroll-step 3)
 
 ;; set startup directory
-(setq default-directory "~/")
+(setq default-directory "w:/programming_projects")
 
 ;; set font
 (add-to-list 'default-frame-alist
-             '(font . "Liberation Mono"))
+             '(font . "Hack"))
 
 ;; Set default font
 (set-face-attribute 'default nil
-                    :family "Liberation Mono"
+                    :family "Hack"
                     :height 110
                     :weight 'normal
                     :width 'normal)
+
+
 
 ;;; END of Code ;; ------------------------------------------------------------------------------------------------------------------
 ;;; Install packages
@@ -230,5 +236,93 @@
 ;; YAML
  (require 'yaml-mode)
 (add-to-list 'auto-mode-alist '("\\.yml\\'" . yaml-mode))
+
+; Accepted file extensions and their appropriate modes
+(setq auto-mode-alist
+      (append
+       '(("\\.cpp$"    . c++-mode)
+         ("\\.hin$"    . c++-mode)
+         ("\\.cin$"    . c++-mode)
+         ("\\.inl$"    . c++-mode)
+         ("\\.rdc$"    . c++-mode)
+         ("\\.h$"    . c++-mode)
+         ("\\.c$"   . c++-mode)
+         ("\\.cc$"   . c++-mode)
+         ("\\.c8$"   . c++-mode)
+         ("\\.txt$" . indented-text-mode)
+         ("\\.emacs$" . emacs-lisp-mode)
+         ("\\.gen$" . gen-mode)
+         ("\\.ms$" . fundamental-mode)
+         ("\\.m$" . objc-mode)
+         ("\\.mm$" . objc-mode)
+         ) auto-mode-alist))
+
+; C++ indentation style
+(defconst casey-big-fun-c-style
+  '((c-electric-pound-behavior   . nil)
+    (c-tab-always-indent         . t)
+    (c-comment-only-line-offset  . 0)
+    (c-hanging-braces-alist      . ((class-open)
+                                    (class-close)
+                                    (defun-open)
+                                    (defun-close)
+                                    (inline-open)
+                                    (inline-close)
+                                    (brace-list-open)
+                                    (brace-list-close)
+                                    (brace-list-intro)
+                                    (brace-list-entry)
+                                    (block-open)
+                                    (block-close)
+                                    (substatement-open)
+                                    (statement-case-open)
+                                    (class-open)))
+    (c-hanging-colons-alist      . ((inher-intro)
+                                    (case-label)
+                                    (label)
+                                    (access-label)
+                                    (access-key)
+                                    (member-init-intro)))
+    (c-cleanup-list              . (scope-operator
+                                    list-close-comma
+                                    defun-close-semi))
+    (c-offsets-alist             . ((arglist-close         .  c-lineup-arglist)
+                                    (label                 . -4)
+                                    (access-label          . -4)
+                                    (substatement-open     .  0)
+                                    (statement-case-intro  .  4)
+                                    (statement-block-intro .  c-lineup-for)
+                                    (case-label            .  4)
+                                    (block-open            .  0)
+                                    (inline-open           .  0)
+                                    (topmost-intro-cont    .  0)
+                                    (knr-argdecl-intro     . -4)
+                                    (brace-list-open       .  0)
+                                    (brace-list-intro      .  4)))
+    (c-echo-syntactic-information-p . t))
+    "Casey's Big Fun C++ Style")
+
+; CC++ mode handling
+(defun casey-big-fun-c-hook ()
+  ; Set my style for the current buffer
+  (c-add-style "BigFun" casey-big-fun-c-style t)
+
+ ; Additional style stuff
+  (c-set-offset 'member-init-intro '++)
+
+  ; Newline indents, semi-colon doesn't
+  (define-key c++-mode-map "\C-m" 'newline-and-indent)
+  (setq c-hanging-semi&comma-criteria '((lambda () 'stop)))
+
+  ; Handle super-tabbify (TAB completes, shift-TAB actually tabs)
+  (setq dabbrev-case-replace t)
+  (setq dabbrev-case-fold-search t)
+  (setq dabbrev-upcase-means-case-search t))
+
+  ; Abbrevation expansion
+  (abbrev-mode 1)
+
+
+  
 
 (provide 'init);;; init.el ends here
