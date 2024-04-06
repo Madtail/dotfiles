@@ -32,6 +32,9 @@
   (setq tab-width 4
         indent-tabs-mode nil)
 
+(setq-default indent-tabs-mode nil) ;; Prefer SPC over TAB when indenting.
+(setq c-basic-offset 4)             ;; I like indenting by 4 spaces.
+
 ; Get rid of the startup message
 (setq inhibit-startup-message t)
 ; Show file full path in title bar
