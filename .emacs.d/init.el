@@ -22,19 +22,20 @@
 (split-window-horizontally)
 
 
-;; custom keybindings
+;;; custom keybindings
 (global-set-key (kbd "C-c m") 'recompile)
 
+;; Movement
+(global-set-key "\C-p" 'backward-paragraph)
+(global-set-key "\C-n" 'forward-paragraph)
+
 ;; line numbers
-(global-display-line-numbers-mode 1)
+(global-display-line-numbers-mode 1)  ; always show line numbers
 
 ; 4-space tabs
-  (setq tab-width 4
-        indent-tabs-mode nil)
-
-(setq-default indent-tabs-mode nil) ;; Prefer SPC over TAB when indenting.
-(setq c-basic-offset 4)             ;; I like indenting by 4 spaces.
-
+(setq-default tab-width 4
+	      indent-tabs-mode nil)
+(setq indent-line-function 'insert-tab)
 
 ; Get rid of the startup message
 (setq inhibit-startup-message t)
@@ -66,12 +67,10 @@
 (global-set-key [C-mouse-5] 'text-scale-decrease)
 
 ;; smooth scroll
-;;(setq scroll-step 3)
-(pixel-scroll-precision-mode 1)
-;(pixel-scroll-mode 1)
+(setq scroll-step 3)
 
 ;; set startup directory
-(setq default-directory "~")
+(setq default-directory "~/work")
 
 ;; set font
 (add-to-list 'default-frame-alist
@@ -95,11 +94,12 @@
 
 (add-to-list 'load-path "~/.emacs.d/site-lisp/")
 
+
 ; list the packages you want
 (setq package-list
       '(yasnippet comment-tags omnisharp autothemer
        auto-complete flycheck gdscript-mode
-	csharp-mode yaml-mode ac-ispell))
+	csharp-mode yaml-mode ac-ispell haskell-mode ada-mode))
 
 
 ; activate all the packages
@@ -211,9 +211,9 @@
 (provide 'gdscript-mode)
 
 ;; go mode
-(add-to-list 'load-path "C:/Users/alber/AppData/Roaming/.emacs.d/elpa/go-mode-20191018.2048")
-(autoload 'go-mode "go-mode" nil t)
-(add-to-list 'auto-mode-alist '("\\.go\\'" . go-mode))
+;;(add-to-list 'load-path "C:/Users/alber/AppData/Roaming/.emacs.d/elpa/go-mode-20191018.2048")
+;;(autoload 'go-mode "go-mode" nil t)
+;;(add-to-list 'auto-mode-alist '("\\.go\\'" . go-mode))
 
 ;; spelling
 (add-hook 'some-mode-hook 'ac-ispell-ac-setup)
