@@ -1,4 +1,6 @@
 ;;; custom variables file
+(setq byte-compile-warnings '((not cl-functions)))
+(setq debug-on-error t)
 (setq custom-file "~/.emacs.d/custom.el")
 (load-file custom-file)
 
@@ -55,12 +57,9 @@
 
 
 ; Stop Emacs from losing undo information by
-; setting very high limits for undo buffers
+; SETTING VERY HIGH LIMITS FOR UNDO buffers
 (setq undo-limit 20000000)
 (setq undo-strong-limit 40000000)
-
-;; Linter
-(add-hook 'after-init-hook #'global-flycheck-mode)
 
 ;; Zoom with mouse-scroll
 (global-set-key [C-mouse-4] 'text-scale-increase)
@@ -84,6 +83,9 @@
                     :width 'normal)
 
 
+;; Disable system bell
+(setq ring-bell-function 'ignore)
+
 
 ;;; END of Code ;; ------------------------------------------------------------------------------------------------------------------
 ;;; Install packages
@@ -94,13 +96,17 @@
 
 (add-to-list 'load-path "~/.emacs.d/site-lisp/")
 
-
 ; list the packages you want
 (setq package-list
-      '(yasnippet comment-tags omnisharp autothemer
-       auto-complete flycheck gdscript-mode
-	csharp-mode yaml-mode ac-ispell haskell-mode ada-mode))
+      '(use-package yasnippet comment-tags autothemer
+       auto-complete flycheck yaml-mode
+       ac-ispell haskell-mode ada-ts-mode
+       company gpr-ts-mode gpr-yasnippets
+       xref lsp-mode rust-mode eglot smartparens))
 
+(use-package rust-mode
+  :init
+  (setq rust-mode-treesitter-derive t))
 
 ; activate all the packages
 (package-initialize)
@@ -116,28 +122,93 @@
 
 
 ;; -----------------------------------------------------
+;; This is only needed once, near the top of the file
+(eval-when-compile
+  ;; Following line is not needed if use-package.el is in ~/.emacs.d
+  (add-to-list 'load-path "/home/madtail/.emacs.d/elpa/use-package-2.4.6")
+  (require 'use-package))
 
-; csharp
-(defun my-csharp-mode-hook ()
-  ;; enable the stuff you want for C# here
-  (electric-pair-mode 1)       ;; Emacs 24
-  (electric-pair-local-mode 1) ;; Emacs 25
-  )
-(add-hook 'csharp-mode-hook 'my-csharp-mode-hook)
+;; Ada stuff
+(load "~/.emacs.d/emacs-ada.el")
 
-(package-install 'omnisharp)
+;; Linter
+;; Flycheck
+(require 'flycheck)
+;;(add-hook 'after-init-hook #'global-flycheck-mode)
 
-; auto-complete
-;;(package-initialize)
-(require 'auto-complete)
-(require 'auto-complete-config)
-(ac-config-default)
+
+;; Company
+(require 'company)
+;;(add-hook 'after-init-hook 'global-company-mode)
+
 
 ;;yasnippet
 (add-to-list 'load-path
                 "~/path-to-yasnippet")
    (require 'yasnippet)
    (yas-global-mode 1)
+
+;; BEGINNING of rust stuff
+
+(defun sp1ff/rust/mode-hook ()
+  "My rust-mode hook"
+
+  (column-number-mode)
+  (display-line-numbers-mode)
+  (hs-minor-mode)
+  (smartparens-mode)
+  (define-key rust-mode-map "\C-ca" 'eglot-code-actions)
+  (define-key rust-mode-map (kbd "C-<right>")   'sp-forward-slurp-sexp)
+  (define-key rust-mode-map (kbd "C-<left>")    'sp-forward-barf-sexp)
+  (define-key rust-mode-map (kbd "C-M-<right>") 'sp-backward-slurp-sexp)
+  (define-key rust-mode-map (kbd "C-M-<left>")  'sp-backward-barf-sexp)
+  (define-key rust-mode-map "\C-c>" 'hs-show-all)
+  (define-key rust-mode-map "\C-c<" 'hs-hide-all)
+  (define-key rust-mode-map "\C-c;" 'hs-toggle-hiding)
+  (define-key rust-mode-map "\C-c'" 'hs-hide-level)
+  (setq indent-tabs-mode nil
+        tab-width 4
+        c-basic-offset 4
+        fill-column 100))
+
+(use-package rust-mode
+  :ensure t
+  :hook (rust-mode . sp1ff/rust/mode-hook)
+  :config
+  (let ((dot-cargo-bin (expand-file-name "~/.cargo/bin/")))
+    (setq rust-rustfmt-bin (concat dot-cargo-bin "rustfmt")
+          rust-cargo-bin (concat dot-cargo-bin "cargo")
+          rust-format-on-save t)))
+
+(use-package clippy-flymake
+  :vc (:url "https://git.sr.ht/~mgmarlow/clippy-flymake" :branch main)
+  :hook (rust-mode . clippy-flymake-setup-backend))
+
+(defun clippy-flymake-manually-activate-flymake ()
+  "Shim for working around eglot's tendency to suppress flymake backends."
+  (add-hook 'flymake-diagnostic-functions #'eglot-flymake-backend nil t)
+  (flymake-mode 1))
+
+;; `eglot' by default will suppress all other flymake backends than its own
+;; <https://github.com/joaotavora/eglot/issues/268> This workaround will
+;; add `flymake-clippy'
+(use-package eglot
+  :ensure t
+  :hook ((rust-mode . eglot-ensure)
+         (eglot-managed-mode . clippy-flymake-manually-activate-flymake))
+  :config
+  (add-to-list 'eglot-stay-out-of 'flymake))
+
+;; flycheck
+;;(use-package flycheck :ensure)
+
+;; END of rust stuff
+
+; auto-complete
+;;(package-initialize)
+(require 'auto-complete)
+(require 'auto-complete-config)
+(ac-config-default)
 
 ;; TODO Highlighting
 (require 'comment-tags)
@@ -160,60 +231,7 @@
         comment-tags-lighter nil))
 (add-hook 'prog-mode-hook 'comment-tags-mode)
 
-;; GDscript
-
 (require 'python)
-
-(defvar gdscript-mode-map
-  (make-keymap)
-  "Keymap for gdscript major mode.")
-
-;;;###autoload
-(add-to-list 'auto-mode-alist '("\\.gd\\'" . gdscript-mode))
-
-
-(defvar gdscript-font-lock-keywords
-  `((,(concat "\\<"
-              (regexp-opt '("if" "elif" "else" "for" "do" "while" "switch" "case"
-	                    "break" "continue" "pass" "return" "class" "extends" "tool"
-	                    "signal" "func" "static" "const" "enum" "var" "onready"
-	                    "export" "setget" "breakpoint"))
-              "\\>")
-     . font-lock-keyword-face)
-    ("func +\\([A-Za-z0-9_]+\\)" (1 font-lock-function-name-face))
-    ("\\([A-Za-z0-9_.]+\\)\s*=" (1 font-lock-variable-name-face))))
-
-(defvar gdscript-mode-syntax-table
-  (let ((st (make-syntax-table)))
-    (modify-syntax-entry ?# "<" st)
-    (modify-syntax-entry ?\n ">" st)
-    st)
-  "Syntax table for `gdscript-mode'.")
-
-(defvar gdscript-imenu-generic-expression
-  (setq gdscript-imenu-generic-expression
-	'((nil "func +\\|class +\\([A-Za-z0-9_]+\\)" 1))))
-
-(defvar gdscript-mode-abbrev-table)
-
-;;;###autoload
-(define-derived-mode gdscript-mode prog-mode "GDScript"
-  "Major mode for editing Godot GDScript files"
-  :syntax-table gdscript-mode-syntax-table
-  (setq-local comment-start "# ")
-  (setq-local comment-start-skip "#+\\s-*")
-  (setq-local font-lock-defaults '(gdscript-font-lock-keywords))
-  (setq-local indent-line-function 'python-indent-line-function)
-  (setq-local indent-tabs-mode t)
-  (setq-local tab-width 4)
-  (setq-local imenu-generic-expression gdscript-imenu-generic-expression))
-
-(provide 'gdscript-mode)
-
-;; go mode
-;;(add-to-list 'load-path "C:/Users/alber/AppData/Roaming/.emacs.d/elpa/go-mode-20191018.2048")
-;;(autoload 'go-mode "go-mode" nil t)
-;;(add-to-list 'auto-mode-alist '("\\.go\\'" . go-mode))
 
 ;; spelling
 (add-hook 'some-mode-hook 'ac-ispell-ac-setup)
@@ -260,6 +278,7 @@
          ("\\.ms$" . fundamental-mode)
          ("\\.m$" . objc-mode)
          ("\\.mm$" . objc-mode)
+         ("\\.rs$" . rust-mode)
          ) auto-mode-alist))
 
 ; C++ indentation style
