@@ -1,6 +1,6 @@
 ;;; custom variables file
 (setq byte-compile-warnings '((not cl-functions)))
-(setq debug-on-error t)
+;;(setq debug-on-error t)
 (setq custom-file "~/.emacs.d/custom.el")
 (load-file custom-file)
 
@@ -87,6 +87,66 @@
 (setq ring-bell-function 'ignore)
 
 
+;; Cool commands totally my own ---------------------------------------------------------
+(defun xah-copy-line-or-region ()
+  "Copy current line or selection.
+
+Copy current line. When called repeatedly, append copy subsequent lines.
+Except:
+
+If `universal-argument' is called first, copy whole buffer (respects `narrow-to-region').
+If `rectangle-mark-mode' is on, copy the rectangle.
+If `region-active-p', copy the region.
+
+URL `http://xahlee.info/emacs/emacs/emacs_copy_cut_current_line.html'
+Created: 2010-05-21
+Version: 2024-06-19"
+  (interactive)
+  (cond
+   (current-prefix-arg (copy-region-as-kill (point-min) (point-max)))
+   ((and (boundp 'rectangle-mark-mode) rectangle-mark-mode)
+    (copy-region-as-kill (region-beginning) (region-end) t))
+   ((region-active-p) (copy-region-as-kill (region-beginning) (region-end)))
+   ((eq last-command this-command)
+    (if (eobp)
+        nil
+      (progn
+        (kill-append "\n" nil)
+        (kill-append (buffer-substring (line-beginning-position) (line-end-position)) nil)
+        (end-of-line)
+        (forward-char))))
+   ((eobp)
+    (if (eq (char-before) 10)
+        (progn)
+      (progn
+        (copy-region-as-kill (line-beginning-position) (line-end-position))
+        (end-of-line))))
+   (t
+    (copy-region-as-kill (line-beginning-position) (line-end-position))
+    (end-of-line)
+    (forward-char))))
+
+(defun xah-cut-line-or-region ()
+  "Cut current line or selection.
+If `universal-argument' is called first, cut whole buffer (respects `narrow-to-region').
+
+URL `http://xahlee.info/emacs/emacs/emacs_copy_cut_current_line.html'
+Created: 2010-05-21
+Version: 2015-06-10"
+  (interactive)
+  (if current-prefix-arg
+      (progn ; not using kill-region because we don't want to include previous kill
+        (kill-new (buffer-string))
+        (delete-region (point-min) (point-max)))
+    (progn (if (region-active-p)
+               (kill-region (region-beginning) (region-end) t)
+             (kill-region (line-beginning-position) (line-beginning-position 2))))))
+
+;; Set keys
+(keymap-global-set "<f5>" 'xah-copy-line-or-region)
+(keymap-global-set "<f6>" 'xah-cut-line-or-region)
+
+
 ;;; END of Code ;; ------------------------------------------------------------------------------------------------------------------
 ;;; Install packages
 (require 'package)
@@ -102,7 +162,8 @@
        auto-complete flycheck yaml-mode
        ac-ispell haskell-mode ada-ts-mode
        company gpr-ts-mode gpr-yasnippets
-       xref lsp-mode rust-mode eglot smartparens))
+       xref lsp-mode rust-mode eglot smartparens elpy
+       lsp-java lsp-ui helm helm-lsp projectile))
 
 (use-package rust-mode
   :init
@@ -131,6 +192,12 @@
 ;; Ada stuff
 (load "~/.emacs.d/emacs-ada.el")
 
+;; Python stuff
+(use-package elpy
+  :ensure t
+  :init
+  (elpy-enable))
+
 ;; Linter
 ;; Flycheck
 (require 'flycheck)
@@ -140,7 +207,10 @@
 ;; Company
 (require 'company)
 ;;(add-hook 'after-init-hook 'global-company-mode)
-
+(use-package company
+  :ensure
+  :custom
+  (company-idle-delay 0.3)) ;; how long to wait until popup
 
 ;;yasnippet
 (add-to-list 'load-path
@@ -158,10 +228,10 @@
   (hs-minor-mode)
   (smartparens-mode)
   (define-key rust-mode-map "\C-ca" 'eglot-code-actions)
-  (define-key rust-mode-map (kbd "C-<right>")   'sp-forward-slurp-sexp)
-  (define-key rust-mode-map (kbd "C-<left>")    'sp-forward-barf-sexp)
-  (define-key rust-mode-map (kbd "C-M-<right>") 'sp-backward-slurp-sexp)
-  (define-key rust-mode-map (kbd "C-M-<left>")  'sp-backward-barf-sexp)
+ ;; (define-key rust-mode-map (kbd "C-<right>")   'sp-forward-slurp-sexp)
+ ;; (define-key rust-mode-map (kbd "C-<left>")    'sp-forward-barf-sexp)
+ ;; (define-key rust-mode-map (kbd "C-M-<right>") 'sp-backward-slurp-sexp)
+ ;; (define-key rust-mode-map (kbd "C-M-<left>")  'sp-backward-barf-sexp)
   (define-key rust-mode-map "\C-c>" 'hs-show-all)
   (define-key rust-mode-map "\C-c<" 'hs-hide-all)
   (define-key rust-mode-map "\C-c;" 'hs-toggle-hiding)
@@ -204,11 +274,46 @@
 
 ;; END of rust stuff
 
+
+;; JAVA stuff
+(require 'lsp-java)
+(add-hook 'java-mode-hook #'lsp)
+
+(condition-case nil
+    (require 'use-package)
+  (file-error
+   (require 'package)
+   (add-to-list 'package-archives '("melpa" . "http://melpa.org/packages/"))
+   (package-initialize)
+   (package-refresh-contents)
+   (package-install 'use-package)
+   (setq use-package-always-ensure t)
+   (require 'use-package)))
+
+(use-package projectile)
+(use-package flycheck)
+(use-package yasnippet :config (yas-global-mode))
+(use-package lsp-mode :hook ((lsp-mode . lsp-enable-which-key-integration)))
+(use-package hydra)
+(use-package company)
+(use-package lsp-ui)
+(use-package which-key :config (which-key-mode))
+(use-package lsp-java :config (add-hook 'java-mode-hook 'lsp))
+(use-package dap-mode :after lsp-mode :config (dap-auto-configure-mode))
+(use-package dap-java :ensure nil)
+(use-package helm-lsp)
+(use-package helm
+  :config (helm-mode))
+(use-package lsp-treemacs)
+
+;; END of JAVA stuff
+
 ; auto-complete
 ;;(package-initialize)
 (require 'auto-complete)
 (require 'auto-complete-config)
 (ac-config-default)
+(global-auto-complete-mode 0)
 
 ;; TODO Highlighting
 (require 'comment-tags)

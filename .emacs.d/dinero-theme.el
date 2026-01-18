@@ -22,7 +22,8 @@
  ;; (dinero-dk-orange  "#eb6123")
   (dinero-purple     "MediumPurple2")
   (dinero-has-yellow "#FFE898")
-  (dinero-second-yellow "#F8FC8F"))
+  (dinero-second-yellow "#F8FC8F")
+  (dinero-comment-background "#3D3737"))
   ;;(dinero-second-yellow "#EFF700"))
  ;;(dinero-dk-purple  "MediumPurple4")
  ;; (dinero-green      "LightGreen"))
@@ -42,7 +43,7 @@
   (font-lock-variable-name-face     (:foreground dinero-main-orange))
   (font-lock-function-name-face     (:foreground dinero-func-yellow))
   (font-lock-type-face              (:foreground dinero-has-yellow))
-  (font-lock-comment-face           (:foreground dinero-comment-gray))
+  (font-lock-comment-face           (:background dinero-comment-background))
   (font-lock-extra-types     (:foreground dinero-purple))
   (font-lock-number-face (:foreground dinero-purple))
 

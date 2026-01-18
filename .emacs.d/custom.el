@@ -8,7 +8,10 @@
     "#f6f3e8"])
  '(custom-enabled-themes '(dinero))
  '(custom-safe-themes
-   '("cd149315b4aaf9129f3493511b19ffcdfab61411d1f7c143c09df47d9f8730aa"
+   '("f42c8fd42f062b3d1f89335df88c8280ba979de2799fcd9950853480d7738001"
+     "b350d78e608ff87218a78f62c9832e1710714c7279321fa72a3da889bfe3d408"
+     "4026e314d41b0e50621a5dc520d59821acedf0895d383d3fbaea8b580688daf7"
+     "cd149315b4aaf9129f3493511b19ffcdfab61411d1f7c143c09df47d9f8730aa"
      "5d656082294cc7b6741bc5eb058e088909ccc70ad2e52bf1ce5991d19adc5d6d"
      "e6430ebbce477e07053902e6fd06c28d9e47bf87ea6d81e85cc924cd3c94d03a"
      "4f8541702f11689aee1cc3444ce014976c5c47896a36edef5ccaa8e63a7da37c"
@@ -28,10 +31,14 @@
      "d42aef8415cd5a6563e2109bc350bf5778c5e960a1ca77f27dd493fea7d76f9b"
      default))
  '(package-selected-packages
-   '(ac-ispell ada-ts-mode autothemer comment-tags company eglot
-               gdscript-mode gnat-compiler gpr-ts-mode gpr-yasnippets
-               haskell-mode lsp-ui omnisharp rustic uniquify-files
-               use-package yaml-mode)))
+   '(ac-ispell ada-ts-mode autothemer clippy-flymake comment-tags eglot
+               elpy gdscript-mode gnat-compiler gpr-ts-mode
+               gpr-yasnippets haskell-mode helm helm-lsp lsp-java
+               lsp-ui omnisharp projectile rustic smartparens
+               stimmung-themes uniquify-files use-package yaml-mode))
+ '(stimmung-themes-comment 'background)
+ '(stimmung-themes-dark-highlight-color-foreground "#FBFF00")
+ '(stimmung-themes-string 'none))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
@@ -42,6 +49,7 @@
 
 ;; Tabs
 '(tab-stop-list (quote (4 8 12 16 20 24 28 32 36 40 44 48 52 56 60 64 68 72 76 80 84 88 92 96 100 104 108 112 116 120)))
+
 
 
 (provide 'custom.el);; Custom ends here
