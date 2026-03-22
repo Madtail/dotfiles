@@ -1,0 +1,3 @@
+#FnF6 video/brightnessup BRTUP 00000086 00000000
+event=video/brightnessup
+action=/etc/acpi/actions/FnF6-brightnessup.sh

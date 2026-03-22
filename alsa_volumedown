@@ -1,0 +1,2 @@
+event=button[ /]volumedown
+action=/etc/acpi/actions/alsa_volumedown.sh %e

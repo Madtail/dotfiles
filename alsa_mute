@@ -1,0 +1,2 @@
+event=button[ /]mute
+action=/etc/acpi/actions/alsa_mute.sh %e
