@@ -1,3 +1,6 @@
+;; Theme stuff
+(load "~/.emacs.d/wood.el")
+
 ;;; custom variables file
 (setq byte-compile-warnings '((not cl-functions)))
 ;;(setq debug-on-error t)
@@ -26,6 +29,7 @@
 
 ;;; custom keybindings
 (global-set-key (kbd "C-c m") 'recompile)
+(global-set-key (kbd "M--") 'comment-dwim)
 
 ;; Movement
 (global-set-key "\C-p" 'backward-paragraph)
@@ -33,6 +37,9 @@
 
 ;; line numbers
 (global-display-line-numbers-mode 1)  ; always show line numbers
+
+;; Spaces instead of tabs
+(setq-default indent-tabs-mode nil)
 
 ; 4-space tabs
 (setq-default tab-width 4
@@ -78,7 +85,8 @@
 ;; Set default font
 (set-face-attribute 'default nil
                     :family "Hack"
-                    :height 110
+                    ;;:height 110
+                    :height 200
                     :weight 'normal
                     :width 'normal)
 
@@ -151,8 +159,8 @@ Version: 2015-06-10"
 ;;; Install packages
 (require 'package)
 
-(add-to-list 'package-archives
-             '("melpa-stable" . "http://melpa-stable.milkbox.net/packages/") t)
+;;(add-to-list 'package-archives
+;;             '("melpa-stable" . "http://melpa-stable.milkbox.net/packages/") t)
 
 (add-to-list 'load-path "~/.emacs.d/site-lisp/")
 
@@ -163,11 +171,13 @@ Version: 2015-06-10"
        ac-ispell haskell-mode ada-ts-mode
        company gpr-ts-mode gpr-yasnippets
        xref lsp-mode rust-mode eglot smartparens elpy
-       lsp-java lsp-ui helm helm-lsp projectile))
+       lsp-java lsp-ui helm helm-lsp projectile erlang
+       flycheck-rust treemacs ivy all-the-icons all-the-icons-ivy
+       all-the-icons-dired all-the-icons-ibuffer treemacs-all-the-icons))
 
-(use-package rust-mode
-  :init
-  (setq rust-mode-treesitter-derive t))
+;; (use-package rust-mode
+;;   :init
+;;   (setq rust-mode-treesitter-derive t))
 
 ; activate all the packages
 (package-initialize)
@@ -189,6 +199,151 @@ Version: 2015-06-10"
   (add-to-list 'load-path "/home/madtail/.emacs.d/elpa/use-package-2.4.6")
   (require 'use-package))
 
+(condition-case nil
+    (require 'use-package)
+  (file-error
+   (require 'package)
+   (add-to-list 'package-archives '("melpa" . "http://melpa.org/packages/"))
+   (package-initialize)
+   (package-refresh-contents)
+   (package-install 'use-package)
+   (setq use-package-always-ensure t)
+   (require 'use-package)))
+
+
+;; Highlights the word/symbol at point and any other occurrences in
+;; view. Also allows to jump to the next or previous occurrence.
+;; https://github.com/nschum/highlight-symbol.el
+(use-package highlight-symbol
+  :ensure t
+  :config
+  (setq highlight-symbol-on-navigation-p t)
+  (add-hook 'prog-mode-hook 'highlight-symbol-mode))
+
+;; Emacs minor mode that highlights numeric literals in source code.
+;; https://github.com/Fanael/highlight-numbers
+(use-package highlight-numbers
+  :ensure t
+  :config
+  (add-hook 'prog-mode-hook 'highlight-numbers-mode))
+
+;; http://www.reddit.com/r/emacs/comments/2keh6u/show_tabs_and_trailing_whitespaces_only/
+(use-package whitespace
+  :config
+  ;; Commented since there are too many 'valid' whitespaces in some modes.
+  ;; (setq-default show-trailing-whitespace t)
+  (setq whitespace-style '(face tabs trailing))
+  (set-face-attribute 'whitespace-tab nil
+      :background "red"
+      :foreground "yellow"
+      :weight 'bold)
+  (add-hook 'prog-mode-hook 'whitespace-mode)
+  ;; Delete trailing tabs and spaces on save of a file.
+  (add-hook 'before-save-hook 'whitespace-cleanup)
+  )
+
+;; Bind treemacs to F12
+(global-set-key [(f12)] #'treemacs-select-window)
+
+;;;; `COMPANY'
+(use-package company
+  :ensure t
+  :config
+  (setq company-idle-delay 0)
+  (setq company-minimum-prefix-length 2)
+  (setq company-show-numbers t)
+  ;; To prevent default down-casing.
+  ;; https://emacs.stackexchange.com/questions/10837/how-to-make-company-mode-be-case-sensitive-on-plain-text
+  (setq company-dabbrev-downcase nil)
+  ;; 2023-01-13 From a Reddit post on mixed case issue.
+  (setq company-dabbrev-ignore-case nil)
+  (setq company-dabbrev-code-ignore-case nil))
+
+;; Use `company' everywhere.
+(add-hook 'after-init-hook 'global-company-mode)
+
+(require 'flymake)
+;; Not mine, it's from: https://olddeuteronomy.github.io/post/cpp-programming-in-emacs/
+(defun my/flymake-toggle-diagnostics-buffer ()
+  (interactive)
+  ;; Check if we are in the diagnostics buffer.
+  (if (string-search "*Flymake diagnostics" (buffer-name))
+      (delete-window)
+    (progn
+      ;; Activate the Flymake diagnostics buffer.
+      ;; and switch to it
+      (flymake-show-buffer-diagnostics)
+      (let ((name (flymake--diagnostics-buffer-name)))
+        (if (get-buffer name)
+            (switch-to-buffer-other-window name)
+          (error "No Flymake diagnostics buffer found")
+          )))))
+
+;; Bind diagnostics to F7
+(global-set-key [(f7)] #'my/flymake-toggle-diagnostics-buffer)
+
+;; Additional bindings.
+(global-set-key (kbd "C-c f b") #'flymake-show-buffer-diagnostics)
+(global-set-key (kbd "C-c f p") #'flymake-show-project-diagnostics)
+
+(use-package ivy
+  :config
+  (ivy-mode)
+  (setq ivy-use-virtual-buffers t)
+  (add-hook 'after-init-hook (lambda () (setq ivy-height (/ (window-height) 2))))
+)
+
+(use-package projectile
+  :ensure t
+  :config
+  (projectile-global-mode)
+  (setq projectile-enable-caching t)
+  (setq projectile-completion-system 'ivy)
+)
+
+(use-package treemacs :ensure t)
+(use-package treemacs-projectile :ensure t)
+
+;; Show the current buffer's imenu entries in a separate buffer
+(use-package imenu-list
+  :ensure t
+  :config
+  (setq imenu-list-focus-after-activation t)
+  (global-set-key (kbd "C-.") #'imenu-list-minor-mode)
+)
+
+;; ICONS
+;; https://github.com/domtronn/all-the-icons.el
+(use-package all-the-icons :ensure t)
+
+(use-package all-the-icons-dired :ensure t)
+(add-hook 'dired-mode-hook 'all-the-icons-dired-mode)
+
+(use-package all-the-icons-ibuffer :ensure t
+  :init (all-the-icons-ibuffer-mode 1)
+  :hook (ibuffer-mode . all-the-icons-ibuffer-mode))
+
+(use-package treemacs-all-the-icons :ensure t)
+
+(use-package all-the-icons-ivy :ensure t
+  :after all-the-icons
+  :config (all-the-icons-ivy-setup))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+;; Beginning of trash
+
 ;; Ada stuff
 (load "~/.emacs.d/emacs-ada.el")
 
@@ -201,22 +356,31 @@ Version: 2015-06-10"
 ;; Linter
 ;; Flycheck
 (require 'flycheck)
-;;(add-hook 'after-init-hook #'global-flycheck-mode)
+(add-hook 'after-init-hook #'global-flycheck-mode)
 
 
-;; Company
-(require 'company)
-;;(add-hook 'after-init-hook 'global-company-mode)
-(use-package company
-  :ensure
-  :custom
-  (company-idle-delay 0.3)) ;; how long to wait until popup
+;; ;; Company
+;; (require 'company)
+;; ;;(global-company-mode 1)
+;; (add-hook 'after-init-hook #'global-company-mode)
+;; (use-package company
+;;   :ensure t
+;;   ;;:hook (after-init . global-company-mode)
+;;   :custom
+;;   (company-idle-delay 0.3)) ;; how long to wait until popup
 
 ;;yasnippet
 (add-to-list 'load-path
                 "~/path-to-yasnippet")
    (require 'yasnippet)
-   (yas-global-mode 1)
+(yas-global-mode 1)
+
+;; Erlang
+(setq load-path (cons  "/usr/lib64/erlang/lib/tools-4.1.3/emacs"
+load-path))
+(setq erlang-root-dir "/usr/lib64/erlang/")
+(setq exec-path (cons "/usr/lib64/erlang/bin" exec-path))
+(require 'erlang-start)
 
 ;; BEGINNING of rust stuff
 
@@ -272,6 +436,12 @@ Version: 2015-06-10"
 ;; flycheck
 ;;(use-package flycheck :ensure)
 
+(with-eval-after-load 'rust-mode
+      (add-hook 'flycheck-mode-hook #'flycheck-rust-setup))
+
+(remove-hook 'flymake-diagnostic-functions 'rust-ts-flymake)
+
+
 ;; END of rust stuff
 
 
@@ -279,23 +449,12 @@ Version: 2015-06-10"
 (require 'lsp-java)
 (add-hook 'java-mode-hook #'lsp)
 
-(condition-case nil
-    (require 'use-package)
-  (file-error
-   (require 'package)
-   (add-to-list 'package-archives '("melpa" . "http://melpa.org/packages/"))
-   (package-initialize)
-   (package-refresh-contents)
-   (package-install 'use-package)
-   (setq use-package-always-ensure t)
-   (require 'use-package)))
-
-(use-package projectile)
+;;(use-package projectile)
 (use-package flycheck)
 (use-package yasnippet :config (yas-global-mode))
 (use-package lsp-mode :hook ((lsp-mode . lsp-enable-which-key-integration)))
 (use-package hydra)
-(use-package company)
+;;(use-package company)
 (use-package lsp-ui)
 (use-package which-key :config (which-key-mode))
 (use-package lsp-java :config (add-hook 'java-mode-hook 'lsp))
@@ -384,6 +543,8 @@ Version: 2015-06-10"
          ("\\.m$" . objc-mode)
          ("\\.mm$" . objc-mode)
          ("\\.rs$" . rust-mode)
+         ("\\.erl$" . erlang-mode)
+         ("\\.java$" . java-mode)
          ) auto-mode-alist))
 
 ; C++ indentation style
@@ -420,7 +581,7 @@ Version: 2015-06-10"
                                     (access-label          . -4)
                                     (substatement-open     .  0)
                                     (statement-case-intro  .  4)
-                                    (statement-block-intro .  c-lineup-for)
+                                    (statement-block-intro .  c-lineup-gnu-DEFUN-intro-cont)
                                     (case-label            .  4)
                                     (block-open            .  0)
                                     (inline-open           .  0)
@@ -451,7 +612,23 @@ Version: 2015-06-10"
   ; Abbrevation expansion
   (abbrev-mode 1)
 
+;;(add-hook 'c-mode-common-hook 'casey-big-fun-c-hook)
 
-  
+
+;; C and C++ stuff
+(require 'eglot)
+(add-hook 'c-mode-hook 'eglot-ensure)
+(add-hook 'c++-mode-hook 'eglot-ensure)
+(add-hook 'c-or-c++-mode-hook 'eglot-ensure)
+
+(setq c-default-style "stroustrup")
+(setq c-basic-indent 4)
+(setq c-basic-offset 4)
+
+;; emacs-fu: don’t indent inside of C++ namespaces
+;; http://brrian.tumblr.com/post/9018043954/emacs-fu-dont-indent-inside-of-c-namespaces
+(c-set-offset 'innamespace 0)
+
+
 
 (provide 'init);;; init.el ends here
